@@ -1,0 +1,9 @@
+{
+  "name": "janitor",
+  "version": "0.1.0",
+  "title": "Janitor",
+  "author": "neon",
+  "description": "Press the button, wipe all the stuff and see how it goes.",
+  "dependencies": ["base >= 2.0.0"],
+  "factorio_version": "2.0"
+}
