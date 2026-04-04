@@ -84,6 +84,7 @@ local function open_gui(player)
     direction = "vertical",
   }
   frame.auto_center = true
+  player.opened = frame
 
   -- Surfaces
   local surf_header = frame.add{ type = "flow", direction = "horizontal" }
@@ -92,7 +93,7 @@ local function open_gui(player)
   surf_label.style.horizontally_stretchable = true
   surf_header.add{ type = "button", name = "janitor_surfaces_all",   caption = "All",  style = "mini_button" }
   surf_header.add{ type = "button", name = "janitor_surfaces_none",  caption = "None", style = "mini_button" }
-  local surf_flow = frame.add{ type = "flow", name = "surfaces", direction = "vertical" }
+  local surf_flow = frame.add{ type = "flow", name = "surfaces", direction = "horizontal" }
 
   local planets, platforms = {}, {}
   for _, surface in pairs(game.surfaces) do
@@ -103,12 +104,16 @@ local function open_gui(player)
     end
   end
 
-  local function add_surface_checkboxes(surfaces)
+  local function add_surface_group(group_label, surfaces)
+    if #surfaces == 0 then return end
+    local col = surf_flow.add{ type = "flow", direction = "vertical" }
+    local lbl = col.add{ type = "label", caption = group_label }
+    lbl.style.font = "default-semibold"
     for _, surface in pairs(surfaces) do
       local caption = surface.platform
-        and (surface.name .. " (" .. surface.platform.name .. ")")
+        and surface.platform.name
         or (surface.name:sub(1, 1):upper() .. surface.name:sub(2))
-      surf_flow.add{
+      col.add{
         type    = "checkbox",
         name    = "janitor_surface_" .. surface.name,
         caption = caption,
@@ -117,16 +122,8 @@ local function open_gui(player)
     end
   end
 
-  if #planets > 0 then
-    local lbl = surf_flow.add{ type = "label", caption = "Planets" }
-    lbl.style.font = "default-semibold"
-    add_surface_checkboxes(planets)
-  end
-  if #platforms > 0 then
-    local lbl = surf_flow.add{ type = "label", caption = "Platforms" }
-    lbl.style.font = "default-semibold"
-    add_surface_checkboxes(platforms)
-  end
+  add_surface_group("Planets",   planets)
+  add_surface_group("Platforms", platforms)
 
   frame.add{ type = "line" }
 
@@ -167,10 +164,17 @@ local function read_gui_config(player)
 
   local cfg = { surfaces = {}, categories = {} }
 
-  for _, cb in pairs(frame.surfaces.children) do
-    local name = cb.name:match("^janitor_surface_(.+)$")
-    if name then cfg.surfaces[name] = cb.state end
+  local function read_checkboxes(flow, prefix, out)
+    for _, child in pairs(flow.children) do
+      if child.type == "checkbox" then
+        local key = child.name:match("^" .. prefix .. "(.+)$")
+        if key then out[key] = child.state end
+      elseif child.type == "flow" then
+        read_checkboxes(child, prefix, out)
+      end
+    end
   end
+  read_checkboxes(frame.surfaces, "janitor_surface_", cfg.surfaces)
 
   for _, cb in pairs(frame.categories.children) do
     local id = cb.name:match("^janitor_cat_(.+)$")
@@ -262,6 +266,8 @@ local function set_all_checkboxes(flow, state)
   for _, child in pairs(flow.children) do
     if child.type == "checkbox" then
       child.state = state
+    elseif child.type == "flow" then
+      set_all_checkboxes(child, state)
     end
   end
 end
