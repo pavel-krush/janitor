@@ -19,6 +19,11 @@ local BELT_TYPES = {
   ["linked-belt"]      = true,
 }
 
+local ROBOT_TYPES = {
+  ["construction-robot"] = true,
+  ["logistic-robot"]     = true,
+}
+
 local MACHINE_TYPES = {
   ["assembling-machine"] = true,
   ["furnace"]            = true,
@@ -32,13 +37,15 @@ local MACHINE_TYPES = {
 ---------------------------------------------------------------------------
 
 local CATEGORIES = {
-  { id = "containers",       label = "Chests & containers"         },
-  { id = "belts",            label = "Transport belts & splitters" },
-  { id = "inserters",        label = "Inserters"                   },
-  { id = "machines",         label = "Machines & furnaces"         },
-  { id = "train_cargo",      label = "Train cargo wagons"          },
-  { id = "fluids",           label = "Fluids"                      },
-  { id = "player_inventory", label = "Player inventory"            },
+  { id = "containers",       label = {"janitor-category.containers"}    },
+  { id = "belts",            label = {"janitor-category.belts"}         },
+  { id = "inserters",        label = {"janitor-category.inserters"}     },
+  { id = "machines",         label = {"janitor-category.machines"}      },
+  { id = "train_cargo",      label = {"janitor-category.train_cargo"}   },
+  { id = "fluids",           label = {"janitor-category.fluids"}        },
+  { id = "roboports",        label = {"janitor-category.roboports"}       },
+  { id = "robots",           label = {"janitor-category.robots"}          },
+  { id = "player_inventory", label = {"janitor-category.player_inventory"} },
 }
 
 ---------------------------------------------------------------------------
@@ -80,7 +87,7 @@ local function open_gui(player)
   local frame = player.gui.screen.add{
     type      = "frame",
     name      = GUI_NAME,
-    caption   = "Janitor",
+    caption   = {"janitor-gui.title"},
     direction = "vertical",
   }
   frame.auto_center = true
@@ -88,11 +95,11 @@ local function open_gui(player)
 
   -- Surfaces
   local surf_header = frame.add{ type = "flow", direction = "horizontal" }
-  local surf_label = surf_header.add{ type = "label", caption = "Surfaces" }
+  local surf_label = surf_header.add{ type = "label", caption = {"janitor-gui.surfaces"} }
   surf_label.style.font = "default-bold"
   surf_label.style.horizontally_stretchable = true
-  surf_header.add{ type = "button", name = "janitor_surfaces_all",   caption = "All",  style = "mini_button" }
-  surf_header.add{ type = "button", name = "janitor_surfaces_none",  caption = "None", style = "mini_button" }
+  surf_header.add{ type = "button", name = "janitor_surfaces_all",   caption = {"janitor-gui.all"},  style = "mini_button" }
+  surf_header.add{ type = "button", name = "janitor_surfaces_none",  caption = {"janitor-gui.none"}, style = "mini_button" }
   local surf_flow = frame.add{ type = "flow", name = "surfaces", direction = "horizontal" }
 
   local planets, platforms = {}, {}
@@ -122,18 +129,18 @@ local function open_gui(player)
     end
   end
 
-  add_surface_group("Planets",   planets)
-  add_surface_group("Platforms", platforms)
+  add_surface_group({"janitor-gui.planets"},   planets)
+  add_surface_group({"janitor-gui.platforms"}, platforms)
 
   frame.add{ type = "line" }
 
   -- Categories
   local cat_header = frame.add{ type = "flow", direction = "horizontal" }
-  local cat_label = cat_header.add{ type = "label", caption = "Wipe" }
+  local cat_label = cat_header.add{ type = "label", caption = {"janitor-gui.wipe"} }
   cat_label.style.font = "default-bold"
   cat_label.style.horizontally_stretchable = true
-  cat_header.add{ type = "button", name = "janitor_categories_all",  caption = "All",  style = "mini_button" }
-  cat_header.add{ type = "button", name = "janitor_categories_none", caption = "None", style = "mini_button" }
+  cat_header.add{ type = "button", name = "janitor_categories_all",  caption = {"janitor-gui.all"},  style = "mini_button" }
+  cat_header.add{ type = "button", name = "janitor_categories_none", caption = {"janitor-gui.none"}, style = "mini_button" }
   local cat_flow = frame.add{ type = "flow", name = "categories", direction = "vertical" }
   for _, cat in pairs(CATEGORIES) do
     cat_flow.add{
@@ -148,8 +155,8 @@ local function open_gui(player)
 
   -- Buttons
   local btn_flow = frame.add{ type = "flow", direction = "horizontal" }
-  btn_flow.add{ type = "button", name = "janitor_wipe",   caption = "Wipe",   style = "red_button" }
-  btn_flow.add{ type = "button", name = "janitor_cancel", caption = "Cancel" }
+  btn_flow.add{ type = "button", name = "janitor_wipe",   caption = {"janitor-gui.wipe"},   style = "red_button" }
+  btn_flow.add{ type = "button", name = "janitor_cancel", caption = {"janitor-gui.cancel"} }
 end
 
 local function close_gui(player)
@@ -217,8 +224,9 @@ local function wipe_entity(entity, cfg)
     clear_inventories(entity)
 
   elseif BELT_TYPES[t] and cfg.categories.belts then
-    local n = t == "splitter" and 4 or 2
-    for i = 1, n do entity.get_transport_line(i).clear() end
+    for i = 1, entity.get_max_transport_line_index() do
+      entity.get_transport_line(i).clear()
+    end
 
   elseif t == "inserter" and cfg.categories.inserters then
     clear_inventories(entity)
@@ -230,12 +238,18 @@ local function wipe_entity(entity, cfg)
   elseif t == "cargo-wagon" and cfg.categories.train_cargo then
     clear_inventories(entity)
 
+  elseif t == "roboport" and cfg.categories.roboports then
+    clear_inventories(entity)
+
+  elseif ROBOT_TYPES[t] and cfg.categories.robots then
+    entity.destroy()
+
   elseif t == "character" and cfg.categories.player_inventory then
     clear_inventories(entity, CHAR_SKIP)
   end
 
   -- fluids are orthogonal: apply to anything with fluidboxes
-  if cfg.categories.fluids and t ~= "locomotive" then
+  if cfg.categories.fluids and t ~= "locomotive" and entity.valid then
     clear_fluids(entity)
   end
 end
@@ -251,7 +265,7 @@ local function run_wipe(player, cfg)
       end
     end
   end
-  player.print("[janitor] done.")
+  player.print({"janitor-gui.done"})
 end
 
 ---------------------------------------------------------------------------
