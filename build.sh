@@ -15,6 +15,7 @@ rsync -a \
   --exclude='build.sh' \
   --exclude='CLAUDE.md' \
   --exclude='.gitignore' \
+  --exclude='.claude' \
   . "$TMP/$FOLDER/"
 
 (cd "$TMP" && zip -r - "$FOLDER") > "$ARCHIVE"
