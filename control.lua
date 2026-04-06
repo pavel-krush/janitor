@@ -210,6 +210,15 @@ local function clear_inventories(entity, skip)
   end
 end
 
+local function clear_inventories_keep_modules(entity)
+  local module_inv = entity.get_module_inventory()
+  local skip = nil
+  if module_inv then
+    skip = { [module_inv.index] = true }
+  end
+  clear_inventories(entity, skip)
+end
+
 local function clear_fluids(entity)
   for i = 1, #entity.fluidbox do
     entity.fluidbox[i] = nil
@@ -233,7 +242,7 @@ local function wipe_entity(entity, cfg)
     if entity.held_stack then entity.held_stack.clear() end
 
   elseif MACHINE_TYPES[t] and cfg.categories.machines then
-    clear_inventories(entity)
+    clear_inventories_keep_modules(entity)
 
   elseif t == "cargo-wagon" and cfg.categories.train_cargo then
     clear_inventories(entity)
