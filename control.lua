@@ -227,6 +227,7 @@ end
 
 local function wipe_entity(entity, cfg)
   if not entity.valid then return end
+  if entity.name == "janitor-safe-chest" then return end
   local t = entity.type
 
   if CONTAINER_TYPES[t] and cfg.categories.containers then
