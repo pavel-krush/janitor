@@ -1,6 +1,6 @@
 # Janitor
 
-A Factorio 2.0 mod that wipes stuff. Useful when you want a clean slate without nuking your save: clear out belts after a refactor, empty every chest before a redesign, dump all the fluids stuck in your spaghetti, kill the swarm of robots circling the screen at 5 fps.
+A Factorio 2.1 mod that wipes stuff. Useful when you want a clean slate without nuking your save: clear out belts after a refactor, empty every chest before a redesign, dump all the fluids stuck in your spaghetti, kill the swarm of robots circling the screen at 5 fps.
 
 Press a key, tick the boxes for what you want gone, hit Wipe. That's it.
 

@@ -1,6 +1,6 @@
 # Janitor — Factorio mod
 
-Factorio 2.0 mod. Press Ctrl+J, configure what to wipe, press Wipe.
+Factorio 2.1 mod. Press Ctrl+J, configure what to wipe, press Wipe.
 
 ## Files
 
@@ -23,13 +23,13 @@ Factorio 2.0 mod. Press Ctrl+J, configure what to wipe, press Wipe.
 | Category | What happens |
 |---|---|
 | Containers | `clear_inventories` |
-| Belts | `get_transport_line(i).clear()` for lines 1–2 (1–4 for splitters) |
+| Belts | `get_transport_line(i).clear()` for lines 1..`get_max_transport_line_index()` (2 for belts, 8 for splitters) |
 | Inserters | `clear_inventories` + `held_stack.clear()` |
 | Machines | `clear_inventories` |
 | Train cargo | `clear_inventories` on cargo-wagon |
 | Roboports | `clear_inventories` (removes stored robots + repair packs) |
 | Robots in flight | `entity.destroy()` |
-| Fluids | `fluidbox[i] = nil` on all entities with fluidboxes (orthogonal to other categories) |
+| Fluids | `entity.clear_fluid_inside()` on every entity, clears connected fluid segments too (orthogonal to other categories) |
 | Player inventory | `clear_inventories` skipping armor, guns, ammo slots |
 
 Locomotive fuel is never cleared regardless of settings.

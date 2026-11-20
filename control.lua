@@ -219,10 +219,11 @@ local function clear_inventories_keep_modules(entity)
   clear_inventories(entity, skip)
 end
 
+-- 2.1 removed LuaEntity::fluidbox. clear_fluid_inside() empties the entity
+-- and its connected fluid segments (pipes/tanks keep fluid in segments, so
+-- clear_fluids() alone would not touch them). No-op on entities without fluids.
 local function clear_fluids(entity)
-  for i = 1, #entity.fluidbox do
-    entity.fluidbox[i] = nil
-  end
+  entity.clear_fluid_inside()
 end
 
 local function wipe_entity(entity, cfg)
